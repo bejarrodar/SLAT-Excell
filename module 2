@@ -1,0 +1,91 @@
+Rem Attribute VBA_ModuleType=VBAModule
+Option VBASupport 1
+
+Public Function saleTrans(ByRef Target As Range)
+    On Error GoTo MyErrorHandler:
+    
+    Dim box As Long
+    Dim place As Range
+    Dim clear As Range
+    
+    Set clear = Range("E5:E105")
+    box = Target.value + 4
+    Set place = Target.Offset(, -9)
+    Application.ScreenUpdating = False
+    If IsEmpty(Sheets("SaleBox").Cells(box, 2)) Then
+        
+        Sheets("BackOffice").Select
+        Range(place.Offset(, -1), place.Offset(, 1)).Copy
+        Sheets("SaleBox").Select
+        Range(Cells(box, 2), Cells(box, 4)).PasteSpecial xlPasteValues
+        Sheets("BackOffice").Select
+        place.Offset(, 3).Copy
+        Sheets("SaleBox").Select
+        Cells(box, 5).PasteSpecial xlPasteValues
+        Cells(box, 6).value = 0
+        Sheets("BackOffice").Select
+        Range(place.Offset(, -1), place.Offset(, 3)).ClearContents
+        Call findPrice(clear)
+        Application.ScreenUpdating = True
+        
+    ElseIf MsgBox("There is a book already in slot " & Target.value & vbNewLine & "Would you like to continue?", vbYesNo) = vbYes Then
+        
+        Sheets("BackOffice").Select
+        Range(place.Offset(, -1), place.Offset(, 1)).Copy
+        Sheets("SaleBox").Select
+        Range(Cells(box, 2), Cells(box, 4)).PasteSpecial xlPasteValues
+        Sheets("BackOffice").Select
+        place.Offset(, 3).Copy
+        Sheets("SaleBox").Select
+        Cells(box, 5).PasteSpecial xlPasteValues
+        Cells(box, 6).value = 0
+        Sheets("BackOffice").Select
+        Range(place.Offset(, -1), place.Offset(, 3)).ClearContents
+        Call findPrice(clear)
+        Application.ScreenUpdating = True
+    
+    Else
+       Sheets("BackOffice").Select
+       Target.ClearContents
+       Application.ScreenUpdating = True
+       
+    End If
+MyErrorHandler:
+    If Not Err.Number = 0 Then
+    MsgBox "Error Number is " & Err.Number, vbInformation
+    End If
+End Function
+
+Public Function saleChange(ByRef Target As Range)
+    On Error GoTo MyErrorHandler:
+    
+    Dim oldPlace As Range
+    Dim newPlace As Range
+    Dim temp As Range
+    
+    Set oldPlace = Target.Offset(, -16)
+    Set newPlace = Cells(Target.value + 4, 2)
+    Set temp = Range("S10:W10")
+    'MsgBox "oldPlace = " & oldPlace.Address & vbNewLine & "newPlace = " & newPlace.Address, vbInformation
+    Set oldPlace = oldPlace.Resize(, 5)
+    Set newPlace = newPlace.Resize(, 5)
+    
+    Application.ScreenUpdating = False
+    
+    newPlace.Copy
+    temp.PasteSpecial xlPasteValues
+    oldPlace.Copy
+    newPlace.PasteSpecial xlPasteValues
+    temp.Copy
+    oldPlace.PasteSpecial xlPasteValues
+    temp.ClearContents
+    
+    
+    Application.ScreenUpdating = True
+    
+MyErrorHandler:
+    If Not Err.Number = 0 Then
+    MsgBox "Error Number is " & Err.Number & " in saleChnge", vbInformation
+    End If
+End Function
+
