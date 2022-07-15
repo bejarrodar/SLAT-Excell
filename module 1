@@ -1,0 +1,240 @@
+Rem Attribute VBA_ModuleType=VBAModule
+Option VBASupport 1
+' The password is caplan
+
+Function NextEmpty(ByVal x As Range)
+    Dim cell As Range
+    Dim Rng As Range
+    
+    Set Rng = Range(x.Address)
+    For Each cell In Rng
+        If IsEmpty(cell) = True Then
+           Set NextEmpty = cell
+           Exit Function
+    End If
+    Next cell
+End Function
+
+Function LastRow(ByVal Val As Integer, Optional x As String) As Long ' Calculates last row
+    Worksheets(x).Activate
+    LastRow = Cells(Rows.count, Val).End(xlUp).row + 1
+ 
+End Function
+
+Sub Loader()
+
+ Dim myFile As String ' file thats selected
+ Dim text As String ' temp storage of each line
+ Dim game As Integer
+ Dim serial As String
+ Dim descrip As String
+ Dim bookDate As String
+ Dim fileNo As Integer
+ Dim buffer As String    ' temporary string buffer
+ Dim sentence() As String    ' the main array to save sentences
+ Dim i, total, j, count As Integer
+ Dim row As Long
+ Dim value As String
+ Dim coder As String
+myFile = Application.GetOpenFilename()
+    
+' Error Code if no txt file selected
+If Len(Dir$(myFile)) = 0 Then
+        MsgBox "File not found."
+        Exit Sub
+End If
+    
+ 'Initialize array
+    ReDim sentence(0)
+
+    'get file handle number
+    fileNo = FreeFile()
+    Open myFile For Input As #fileNo
+
+    i = 0
+    Do While Not EOF(fileNo)
+        Line Input #fileNo, buffer  'read & save sentences line by line
+        ReDim Preserve sentence(i + 1)  ' increase 1 more array
+        sentence(i) = LTrim(RTrim(buffer))
+        i = i + 1
+    Loop
+    Close #fileNo
+    total = i
+    
+    On Error GoTo MyErrorHandler:
+    coder = Sheets("BookImport").Range("M4").value
+    For i = 0 To total
+        text = sentence(i)
+        If Not InStr(text, coder) = 0 Then
+            count = count + 1
+            game = Mid(text, 2, 4)
+            serial = Mid(text, 8, 10)
+            descrip = Mid(text, 20, 23)
+            bookDate = Mid(text, 51, 11)
+            
+            For j = 1 To 4
+                If j = 1 Then
+                    value = game
+                ElseIf j = 2 Then
+                    value = serial
+                ElseIf j = 3 Then
+                    value = descrip
+                ElseIf j = 4 Then
+                    value = bookDate
+                End If
+                Cells(LastRow(j, "BookImport"), j) = value
+            Next j
+        End If
+    Next i
+
+    MsgBox count & " Books were added.", vbInformation
+MyErrorHandler:
+    If Err.Number = 13 Then
+        MsgBox "Unable To Find Any books" & vbNewLine & "Please Check State Box is Correct", vbInformation
+    ElseIf Err.Number = 0 Then
+        
+    Else
+     MsgBox "Error Code " & Err.Number & " was recieved.", vbInformation
+    End If
+End Sub
+
+Sub Loader2()
+    
+    Dim myFile As String ' file thats selected
+    Dim text As String ' temp storage of each line
+    Dim game As Integer
+    Dim serial As String
+    Dim descrip As String
+    Dim bookDate As String
+    Dim fileNo As Integer
+    Dim buffer As String    ' temporary string buffer
+    Dim sentence() As String    ' the main array to save sentences
+    Dim i, total, j, count As Integer
+    Dim row As Long
+    Dim value As String
+    Dim coder As String
+    
+On Error GoTo MyErrorHandler:
+
+myFile = Application.GetOpenFilename()
+    
+' Error Code if no txt file selected
+If Len(Dir$(myFile)) = 0 Then
+        MsgBox "File not found."
+        Exit Sub
+End If
+    
+ 'Initialize array
+    ReDim sentence(0)
+
+    'get file handle number
+    fileNo = FreeFile()
+    
+    Open myFile For Input As #fileNo
+    buffer = Input(LOF(iFile), iFile)
+    Close #fileNo
+    
+    MsgBox count & " Books were added.", vbInformation
+MyErrorHandler:
+    If Err.Number = 13 Then
+        MsgBox "Unable To Find Any books" & vbNewLine & "Please Check State Box is Correct", vbInformation
+    ElseIf Err.Number = 0 Then
+        
+    Else
+     MsgBox "Error Code " & Err.Number & " was recieved.", vbInformation
+    End If
+    
+End Sub
+
+Function calcValue(ByRef myCell As Range) As Integer
+Dim numRow As Long, numCol As Long
+
+numCol = myCell.Columns.count
+numRow = myCell.Rows.count
+On Error GoTo MyErrorHandler:
+If numRow > 1 Or numCol > 1 Then
+   MsgBox "Only one cell is accepted"
+   Exit Function
+Else
+   If myCell = 1 Then
+     calcValue = 300
+   ElseIf myCell = 2 Then
+      calcValue = 150
+   ElseIf myCell = 3 Then
+      calcValue = 100
+   ElseIf myCell = 5 Then
+      calcValue = 60
+   ElseIf myCell >= 10 Then
+      calcValue = 30
+   ElseIf myCell = "#N/A" Then
+      calcValue = 0
+   End If
+End If
+MyErrorHandler:
+    If Err.Number = 1004 Then
+        myCell = 0
+    End If
+End Function
+
+Public Sub findPrice(ByVal x As Range)
+    
+    Dim cell As Range
+    Dim Rng As Range
+    
+    Set Rng = Range(x.Address)
+    For Each cell In Rng
+        If IsEmpty(cell.Offset(, -4)) = False Then
+            cell = Application.VLookup(cell.Offset(, -4), Sheets("BackOffice").Range("M5:N105"), 2, False)
+        Else
+            cell = 0
+    End If
+    Next cell
+End Sub
+
+Sub transferToBack()
+
+    Dim dif1, dif2 As Integer
+    Dim i, j, left1, left2 As Integer
+    Dim Rng As Range
+    Dim cell As Range
+    Dim LastBook As Range
+    Dim place As Range
+    Dim placeRng As Range
+    
+    
+    ' Find Last Placement
+    dif1 = 105 - LastRow(1, "BackOffice")
+    dif2 = LastRow(1, "BookImport") - 4
+    left1 = dif1 - dif2
+    
+    Application.ScreenUpdating = False
+        For i = 5 To LastRow(1, "BookImport")
+            If left1 > 0 Then
+                Set placeRng = Range("A5:A105")
+                Range(Cells(i, 1), Cells(i, 4)).Copy
+                Sheets("BackOffice").Select
+                Set place = NextEmpty(placeRng)
+                place.PasteSpecial xlPasteValues
+                Sheets("BookImport").Select
+                Range(Cells(i, 1), Cells(i, 4)).ClearContents
+                left1 = left1 - 1
+            End If
+        Next i
+    Application.ScreenUpdating = True
+        Sheets("BackOffice").Select
+        Set Rng = Range("E5:E105")
+        Call findPrice(Rng)
+        For Each cell In Rng
+            If IsError(cell) = True Then
+                Set LastBook = NextEmpty(Range("M5:M105"))
+                cell.Select
+                LastBook = ActiveCell.Offset(, -4).value
+                LastBook.Offset(, 1) = InputBox(ActiveCell.Offset(, -4) & " price was not found." & vbNewLine & "Please enter The price for book " & ActiveCell.Offset(, -2), "Price", 1)
+                Call findPrice(Rng)
+            End If
+        Next cell
+        Call findPrice(Rng)
+End Sub
+
+
+
