@@ -1,0 +1,166 @@
+Rem Attribute VBA_ModuleType=VBAModule
+Option VBASupport 1
+Sub PrintSheet()
+    
+    ActiveSheet.PrintOut
+    
+End Sub
+
+Sub SaveBook()
+    
+    Dim file_save_name_path As String ' Complete Path and File Name to save
+    file_save_name_path = Sheets("SaleBox").Range("S5").value
+    
+    'TURN OFF ALERTS, SO USER ISN'T PROMPTED TO OVERWRITE EXISTING FILE:
+    Application.ScreenUpdating = False
+    'save the .xlsm file:
+    ActiveWorkbook.SaveAs Filename:=file_save_name_path, _
+    FileFormat:=52, _
+    Password:="", _
+    WriteResPassword:="", _
+    ReadOnlyRecommended:=False, _
+    CreateBackup:=False
+    Application.DisplayAlerts = True
+    
+End Sub
+
+Sub Auto_Open()
+
+Dim sUserNameTemp As String
+Dim sUserName As String
+Dim dir_path_check As String ' Used to check if directory exist
+
+sUserNameTemp = Environ$("Username")
+
+If Left(sUserNameTemp, 2) = "ST" Then
+    If Len(sUserNameTemp) > 1 Then
+        sUserName = Right(sUserNameTemp, 4)
+    End If
+Else
+    sUserName = sUserNameTemp
+End If
+
+
+Sheets("SaleBox").Select
+Range("C2").value = sUserName
+' Check if directory exist if not create
+
+    If IsEmpty(Sheets("SaleBox").Range("S6")) = True Then
+        Sheets("SaleBox").Range("S6") = "C:\Users\" & sUserName & "\Documents\Slat"
+    End If
+    
+    dir_path_check = Sheets("SaleBox").Range("R6").value
+    If Len(Dir(dir_path_check, vbDirectory)) = 0 Then
+        dir_path_check = GetFolder(dir_path_check)
+        Sheets("SaleBox").Range("S6").value = dir_path_check
+    End If
+    
+End Sub
+
+Function GetFolder(strPath As String) As String
+Dim fldr As FileDialog
+Dim sItem As String
+Set fldr = Application.FileDialog(msoFileDialogFolderPicker)
+With fldr
+    .Title = "Select a Folder"
+    .AllowMultiSelect = False
+    .InitialFileName = strPath
+    If .Show <> -1 Then GoTo NextCode
+    sItem = .SelectedItems(1)
+End With
+NextCode:
+GetFolder = sItem
+Set fldr = Nothing
+End Function
+
+Sub NewDay()
+
+    Dim file_save_name_path As String ' Complete Path and File Name to save
+    Dim temp As Range
+    
+    file_save_name_path = Sheets("SaleBox").Range("S5").value
+    Application.ScreenUpdating = False
+    'TURN OFF ALERTS, SO USER ISN'T PROMPTED TO OVERWRITE EXISTING FILE:
+    Application.DisplayAlerts = False
+    
+    'save the .xlsm file:
+    ActiveWorkbook.SaveAs Filename:=file_save_name_path, _
+    FileFormat:=52, _
+    Password:="", _
+    WriteResPassword:="", _
+    ReadOnlyRecommended:=False, _
+    CreateBackup:=False
+
+    'TURN ALERTS BACK ON (THE DEFAULT VALUE):
+    Application.DisplayAlerts = True
+    
+    Sheets("SaleBox").Select
+    Range("D1").Select
+    Selection.value = Date
+    file_save_name_path = Sheets("SaleBox").Range("S5")
+    
+    'TURN OFF ALERTS, SO USER ISN'T PROMPTED TO OVERWRITE EXISTING FILE:
+    Application.DisplayAlerts = False
+
+    'save the .xlsm file:
+    ActiveWorkbook.SaveAs Filename:=file_save_name_path, _
+    FileFormat:=52, _
+    Password:="", _
+    WriteResPassword:="", _
+    ReadOnlyRecommended:=False, _
+    CreateBackup:=False
+
+    'TURN ALERTS BACK ON (THE DEFAULT VALUE):
+    Application.DisplayAlerts = True
+    
+    Set temp = Range("K5:K54")
+    Call Module3.FillBlank(temp)
+    
+    Sheets("SaleBox").Select
+    Range("K5:K54").Select
+    Selection.Copy
+    Range("F5").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    
+    Range("G5:G54").ClearContents
+    Range("I5:I54").ClearContents
+    Range("K5:K54").ClearContents
+    
+    Remove_Empties
+    Sheets("SaleBox").Select
+    Range("G5").Select
+End Sub
+
+Sub Remove_Empties()
+
+    Dim cell As Range
+    Dim Rng As Range
+    
+    Set Rng = Range("O5:O54")
+    For Each cell In Rng
+        If cell.value = "0" Then
+           cell.Offset(, -13).ClearContents
+           cell.Offset(, -12).ClearContents
+           cell.Offset(, -11).ClearContents
+           cell.Offset(, -10).ClearContents
+           cell.Offset(, -9).ClearContents
+    End If
+    Next cell
+
+End Sub
+
+Function FillBlank(ByRef temp As Range)
+    
+    Dim Rng As Range
+    Dim cell As Range
+    
+    Set Rng = temp
+    For Each cell In Rng
+        If IsEmpty(cell) = True Then
+            cell.Offset(, -2).Copy
+            cell.PasteSpecial xlPasteValues
+        End If
+    Next cell
+    
+End Function
